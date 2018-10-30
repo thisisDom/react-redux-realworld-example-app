@@ -68,6 +68,11 @@ const Articles = {
     requests.post('/articles', { article })
 };
 
+const Authors = {
+  all: page =>
+    requests.get(`/authors?${limit(10, page)}`),
+}
+
 const Comments = {
   create: (slug, comment) =>
     requests.post(`/articles/${slug}/comments`, { comment }),
@@ -87,6 +92,7 @@ const Profile = {
 };
 
 export default {
+  Authors,
   Articles,
   Auth,
   Comments,

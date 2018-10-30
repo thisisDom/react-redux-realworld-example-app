@@ -1,8 +1,30 @@
 import ArticleList from '../ArticleList';
+import AuthorList from '../AuthorList';
 import React from 'react';
 import agent from '../../agent';
 import { connect } from 'react-redux';
-import { CHANGE_TAB } from '../../constants/actionTypes';
+import { 
+  CHANGE_TAB, 
+  GET_GLOBAL_ARTICLES, 
+  GET_FEED_ARTICLES,
+  GET_AUTHORS,
+} from '../../constants/actionTypes';
+
+const AuthorsFeedTab = props => {
+  const clickHandler = e => {
+    e.preventDefault();
+    props.onTabClick('authors', agent.Authors.all, agent.Authors.all())
+  }
+  return (
+    <li className="nav-item">
+      <a href=""
+        className={ props.tab === 'authors' ? 'nav-link active' : 'nav-link' }
+        onClick={clickHandler}>
+        Authors
+      </a>
+    </li>
+  )
+}
 
 const YourFeedTab = props => {
   if (props.token) {
@@ -55,15 +77,63 @@ const TagFilterTab = props => {
   );
 };
 
+const tabActions = {
+  authors: (pager, payload) => ({
+    type: GET_AUTHORS,
+    pager,
+    payload
+  }),
+  all: (pager, payload) => ({
+    type: GET_GLOBAL_ARTICLES,
+    pager,
+    payload
+  }),
+  feed: (pager, payload) => ({
+    type: GET_FEED_ARTICLES,
+    pager,
+    payload
+  }),
+}
+
 const mapStateToProps = state => ({
-  ...state.articleList,
+  authorList: state.authorList,
+  articleList: state.articleList,
   tags: state.home.tags,
-  token: state.common.token
+  token: state.common.token,
+  tab: state.home.tab,
 });
 
 const mapDispatchToProps = dispatch => ({
-  onTabClick: (tab, pager, payload) => dispatch({ type: CHANGE_TAB, tab, pager, payload })
+  onTabClick: (tab, pager, payload) => {
+    dispatch({ type: CHANGE_TAB, tab, pager, payload })
+    let tabAction = tabActions[tab](pager, payload)
+    if (tabAction){
+      dispatch(tabAction)
+    }
+  }
 });
+
+const renderView = props => {
+  switch(props.tab){
+    case 'authors':
+      return <AuthorList 
+              pager={props.authorList.pager}
+              authors={props.authorList.authors}
+              loading={props.loading} 
+              authorsCount={props.authorList.authorsCount}  
+              currentPage={props.authorList.currentPage}  />
+    case 'feed':
+    case 'all':
+      return <ArticleList
+              pager={props.articleList.pager}
+              articles={props.articleList.articles}
+              loading={props.loading}
+              articlesCount={props.articleList.articlesCount}
+              currentPage={props.articleList.currentPage} />
+    default:
+      return;
+  }
+}
 
 const MainView = props => {
   return (
@@ -78,17 +148,13 @@ const MainView = props => {
 
           <GlobalFeedTab tab={props.tab} onTabClick={props.onTabClick} />
 
+          <AuthorsFeedTab tab={props.tab} onTabClick={props.onTabClick} />
+
           <TagFilterTab tag={props.tag} />
 
         </ul>
       </div>
-
-      <ArticleList
-        pager={props.pager}
-        articles={props.articles}
-        loading={props.loading}
-        articlesCount={props.articlesCount}
-        currentPage={props.currentPage} />
+      {renderView(props)}
     </div>
   );
 };
